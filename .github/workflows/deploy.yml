@@ -1,0 +1,41 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    needs: []  # runs after CI passes in same push
+
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+
+            # Клонируем репо если нет, или пуллим
+            if [ ! -d /opt/news_sender ]; then
+              git clone https://github.com/amirovmir/news_sender.git /opt/news_sender
+            fi
+
+            cd /opt/news_sender
+            git pull origin main
+
+            # .env должен быть создан вручную один раз
+            if [ ! -f deployments/.env ]; then
+              echo "ERROR: deployments/.env not found on VPS. Create it first."
+              exit 1
+            fi
+
+            cd deployments
+            docker compose up -d --build --remove-orphans
+
+            # Проверяем что контейнер запустился
+            sleep 5
+            docker compose ps
