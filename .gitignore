@@ -8,3 +8,8 @@ dist/
 build/
 .venv/
 venv/
+.superpowers/
+docs/
+research/
+final_report.md
+plan.md
