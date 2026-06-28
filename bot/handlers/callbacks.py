@@ -20,6 +20,7 @@ class SettingsState(StatesGroup):
 
 @router.callback_query(F.data == "main_menu")
 async def cb_main_menu(call: CallbackQuery):
+    await call.answer()
     await call.message.edit_text("Главное меню:", reply_markup=main_menu())
 
 
@@ -75,6 +76,10 @@ async def process_city(message: Message, state: FSMContext):
         return
     lat, lon, display_name = result
     await update_user_city(message.from_user.id, display_name, lat, lon)
+    scheduler = message.bot["scheduler"]
+    from bot.services.scheduler import reschedule_user
+    user = await get_user(message.from_user.id)
+    reschedule_user(scheduler, message.bot, user.telegram_id, user.notification_time, lat, lon, display_name, user.is_active)
     weather = await get_weather_text(lat, lon, display_name)
     await message.answer(
         f"✅ Город изменён на <b>{display_name}</b>\n\n{weather}",
@@ -106,6 +111,10 @@ async def process_time(message: Message, state: FSMContext):
         return
     await state.clear()
     await update_user_time(message.from_user.id, formatted)
+    scheduler = message.bot["scheduler"]
+    from bot.services.scheduler import reschedule_user
+    user = await get_user(message.from_user.id)
+    reschedule_user(scheduler, message.bot, user.telegram_id, formatted, user.city_lat, user.city_lon, user.city_name, user.is_active)
     await message.answer(
         f"✅ Время уведомлений изменено на <b>{formatted} МСК</b>",
         reply_markup=main_menu(),
@@ -120,5 +129,9 @@ async def cb_toggle(call: CallbackQuery):
         return
     new_state = not user.is_active
     await toggle_user_active(call.from_user.id, new_state)
+    scheduler = call.bot["scheduler"]
+    from bot.services.scheduler import reschedule_user
+    user_after = await get_user(call.from_user.id)
+    reschedule_user(scheduler, call.bot, user_after.telegram_id, user_after.notification_time, user_after.city_lat, user_after.city_lon, user_after.city_name, new_state)
     status = "✅ включены" if new_state else "❌ выключены"
     await call.message.answer(f"🔔 Уведомления теперь <b>{status}</b>")

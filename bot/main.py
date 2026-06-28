@@ -7,15 +7,12 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from loguru import logger
 
 from bot.config import settings
-from bot.database import init_db
 from bot.handlers import commands, callbacks, messages
 from bot.services.scheduler import setup_scheduler
 
 
 async def main():
     logger.info("Starting bot...")
-
-    await init_db()
 
     storage = RedisStorage.from_url(settings.redis_url)
     bot = Bot(
@@ -30,6 +27,7 @@ async def main():
 
     scheduler = AsyncIOScheduler()
     scheduler.start()
+    bot["scheduler"] = scheduler
     await setup_scheduler(scheduler, bot)
 
     logger.info("Bot is running!")

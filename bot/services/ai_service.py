@@ -23,7 +23,7 @@ def _groq_messages(question: str, history: list[dict]) -> list[dict]:
 
 
 async def _ask_groq(question: str, history: list[dict]) -> str:
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     response = await loop.run_in_executor(
         None,
         lambda: _groq.chat.completions.create(
@@ -42,7 +42,7 @@ async def _ask_gemini(question: str, history: list[dict]) -> str:
         for m in history[-6:]
     )
     prompt = f"{SYSTEM_PROMPT}\n\n{context}\nПользователь: {question}" if context else f"{SYSTEM_PROMPT}\n\nПользователь: {question}"
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     response = await loop.run_in_executor(
         None,
         lambda: _gemini.generate_content(prompt),
