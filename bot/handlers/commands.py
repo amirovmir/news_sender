@@ -1,7 +1,6 @@
 from aiogram import Router
 from aiogram.filters import Command
 from aiogram.types import Message
-from loguru import logger
 
 from bot.database import get_or_create_user, get_user
 from bot.keyboards.inline import main_menu, settings_menu

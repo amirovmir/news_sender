@@ -3,7 +3,6 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy import select, update
 from bot.config import settings
 from bot.models.user import Base, User, ChatHistory
-from loguru import logger
 
 engine = create_async_engine(settings.database_url, echo=False)
 async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
@@ -76,7 +75,7 @@ async def toggle_user_active(telegram_id: int, is_active: bool):
 
 async def get_all_active_users() -> list[User]:
     async with get_session() as session:
-        result = await session.execute(select(User).where(User.is_active == True))
+        result = await session.execute(select(User).where(User.is_active))
         return list(result.scalars().all())
 
 

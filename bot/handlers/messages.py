@@ -1,6 +1,5 @@
 from aiogram import Router, F
 from aiogram.types import Message
-from loguru import logger
 
 from bot.services.ai_service import ask
 from bot.database import get_chat_history, add_chat_message

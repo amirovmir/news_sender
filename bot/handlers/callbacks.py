@@ -2,7 +2,6 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from loguru import logger
 
 from bot.database import get_user, update_user_city, update_user_time, toggle_user_active
 from bot.keyboards.inline import main_menu, settings_menu

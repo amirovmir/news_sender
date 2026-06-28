@@ -20,7 +20,8 @@ jobs:
             set -e
 
             # Клонируем репо если нет, или пуллим
-            if [ ! -d /opt/news_sender ]; then
+            if [ ! -d /opt/news_sender/.git ]; then
+              rm -rf /opt/news_sender
               git clone https://github.com/amirovmir/news_sender.git /opt/news_sender
             fi
 

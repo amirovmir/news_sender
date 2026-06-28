@@ -1,5 +1,4 @@
 import os
-import pytest
 
 os.environ.setdefault("BOT_TOKEN", "test:token")
 os.environ.setdefault("GROQ_API_KEY", "test_groq_key")
