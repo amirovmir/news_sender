@@ -31,7 +31,7 @@ async def test_fetch_raw_headlines_returns_list():
 
     assert isinstance(result, list)
     assert len(result) > 0
-    assert all(isinstance(h, str) for h in result)
+    assert all(isinstance(item, tuple) and len(item) == 3 for item in result)
 
 
 @pytest.mark.asyncio
@@ -52,7 +52,8 @@ async def test_fetch_raw_headlines_deduplicates():
         from bot.services.news import fetch_raw_headlines
         result = await fetch_raw_headlines()
 
-    assert len(result) == len(set(result)), "Headlines should be deduplicated"
+    titles = [title for title, _, _ in result]
+    assert len(titles) == len(set(titles)), "Headlines should be deduplicated"
 
 
 @pytest.mark.asyncio
