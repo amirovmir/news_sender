@@ -50,7 +50,6 @@ async def get_weather_text(lat: float, lon: float, city_name: str) -> str:
         condition = WEATHER_CODES.get(code, "🌡")
 
         return (
-            f"🌍 <b>{city_name}</b>\n"
             f"{condition} <b>{cur['temperature_2m']}°C</b> "
             f"(ощущается {cur['apparent_temperature']}°C)\n"
             f"💧 Влажность: {cur['relative_humidity_2m']}%\n"
@@ -61,4 +60,4 @@ async def get_weather_text(lat: float, lon: float, city_name: str) -> str:
         )
     except Exception as e:
         logger.error(f"Weather error: {e}")
-        return f"🌍 <b>{city_name}</b>\n⚠️ Погода временно недоступна"
+        return "⚠️ Погода временно недоступна"

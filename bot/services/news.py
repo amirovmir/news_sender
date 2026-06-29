@@ -1,5 +1,5 @@
 import asyncio
-from typing import Callable, Awaitable
+import html
 import aiohttp
 import feedparser
 from loguru import logger
@@ -47,7 +47,6 @@ async def fetch_raw_headlines() -> list[tuple[str, str, str]]:
         ]
         results = await asyncio.gather(*tasks)
 
-    # Pair each result batch with is_russian flag
     batches = [(result, is_ru) for result, (_, _, is_ru) in zip(results, RSS_FEEDS)]
 
     seen: set[str] = set()
@@ -66,26 +65,21 @@ async def fetch_raw_headlines() -> list[tuple[str, str, str]]:
     return (international + russian[:RU_LIMIT])[:20]
 
 
-def _format_news_with_sources(items: list[tuple[str, str, str]], limit: int = 7) -> str:
+def format_news(items: list[tuple[str, str, str]], limit: int = 7) -> str:
+    """Each headline followed immediately by source link, blank line between items."""
     lines = []
     for i, (title, link, source) in enumerate(items[:limit], 1):
+        safe_title = html.escape(title)
+        safe_source = html.escape(source)
         if link:
-            lines.append(f"{i}. {title}\n   <a href=\"{link}\">{source}</a>")
+            lines.append(f"{i}. {safe_title}\n<a href=\"{link}\">{safe_source}</a>")
         else:
-            lines.append(f"{i}. {title}\n   {source}")
+            lines.append(f"{i}. {safe_title}\n{safe_source}")
     return "\n\n".join(lines)
 
 
-async def get_news_summary(summarize_fn: Callable[[list[str]], Awaitable[str]]) -> str:
+async def get_news_text(limit: int = 7) -> str:
     items = await fetch_raw_headlines()
     if not items:
-        return "📰 <b>Новости</b>\n⚠️ Новости временно недоступны"
-    try:
-        headlines_only = [title for title, _, _ in items]
-        summary_text = await summarize_fn(headlines_only)
-        # Append original headlines with source links below the summary
-        sources_block = _format_news_with_sources(items)
-        return f"📰 <b>Главные новости</b>\n\n{summary_text}\n\n<b>Источники:</b>\n\n{sources_block}"
-    except Exception as e:
-        logger.error(f"News summary error: {e}")
-        return f"📰 <b>Главные новости</b>\n\n{_format_news_with_sources(items)}"
+        return "⚠️ Новости временно недоступны"
+    return format_news(items, limit)

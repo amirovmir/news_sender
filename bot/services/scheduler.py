@@ -5,8 +5,8 @@ from loguru import logger
 
 from bot.database import get_all_active_users
 from bot.services.weather import get_weather_text
-from bot.services.news import get_news_summary
-from bot.services.ai_service import generate_motivation, summarize_headlines
+from bot.services.news import get_news_text
+from bot.services.ai_service import generate_motivation
 
 
 async def send_morning_digest(bot: Bot, telegram_id: int, city_lat: float,
@@ -14,17 +14,14 @@ async def send_morning_digest(bot: Bot, telegram_id: int, city_lat: float,
     try:
         motivation = await generate_motivation()
         weather = await get_weather_text(city_lat, city_lon, city_name)
-        news = await get_news_summary(summarize_headlines)
+        news = await get_news_text()
 
-        sep = "━" * 28
         text = (
             f"🌅 <b>Доброе утро!</b>\n\n"
             f"💪 {motivation}\n\n"
-            f"{sep}\n\n"
-            f"{weather}\n\n"
-            f"{sep}\n\n"
+            f"🌍 <b>Погода в {city_name}</b>\n{weather}\n\n"
+            f"📰 <b>Главные новости</b>\n\n"
             f"{news}\n\n"
-            f"{sep}\n"
             f"💬 Напиши мне что-нибудь — я отвечу!"
         )
         await bot.send_message(telegram_id, text)

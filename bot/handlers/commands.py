@@ -5,8 +5,7 @@ from aiogram.types import Message
 from bot.database import get_or_create_user, get_user
 from bot.keyboards.inline import main_menu, settings_menu
 from bot.services.weather import get_weather_text
-from bot.services.news import get_news_summary
-from bot.services.ai_service import summarize_headlines
+from bot.services.news import get_news_text
 
 router = Router()
 
@@ -48,14 +47,14 @@ async def cmd_weather(message: Message):
         return
     await message.answer("⏳ Запрашиваю погоду...")
     text = await get_weather_text(user.city_lat, user.city_lon, user.city_name)
-    await message.answer(text)
+    await message.answer(f"🌍 <b>Погода в {user.city_name}</b>\n{text}")
 
 
 @router.message(Command("news"))
 async def cmd_news(message: Message):
     await message.answer("⏳ Собираю новости...")
-    text = await get_news_summary(summarize_headlines)
-    await message.answer(text)
+    text = await get_news_text()
+    await message.answer(f"📰 <b>Главные новости</b>\n\n{text}")
 
 
 @router.message(Command("settings"))

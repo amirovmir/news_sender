@@ -13,19 +13,21 @@ FAKE_RSS = """<?xml version="1.0"?>
 </rss>"""
 
 
-@pytest.mark.asyncio
-async def test_fetch_raw_headlines_returns_list():
+def _make_mock_session(rss_content: str):
     mock_resp = AsyncMock()
-    mock_resp.text = AsyncMock(return_value=FAKE_RSS)
+    mock_resp.text = AsyncMock(return_value=rss_content)
     mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
     mock_resp.__aexit__ = AsyncMock(return_value=False)
-
     mock_session = AsyncMock()
     mock_session.get = MagicMock(return_value=mock_resp)
     mock_session.__aenter__ = AsyncMock(return_value=mock_session)
     mock_session.__aexit__ = AsyncMock(return_value=False)
+    return mock_session
 
-    with patch("aiohttp.ClientSession", return_value=mock_session):
+
+@pytest.mark.asyncio
+async def test_fetch_raw_headlines_returns_list():
+    with patch("aiohttp.ClientSession", return_value=_make_mock_session(FAKE_RSS)):
         from bot.services.news import fetch_raw_headlines
         result = await fetch_raw_headlines()
 
@@ -36,19 +38,7 @@ async def test_fetch_raw_headlines_returns_list():
 
 @pytest.mark.asyncio
 async def test_fetch_raw_headlines_deduplicates():
-    duplicate_rss = FAKE_RSS  # same feed for all sources → same headlines
-
-    mock_resp = AsyncMock()
-    mock_resp.text = AsyncMock(return_value=duplicate_rss)
-    mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
-    mock_resp.__aexit__ = AsyncMock(return_value=False)
-
-    mock_session = AsyncMock()
-    mock_session.get = MagicMock(return_value=mock_resp)
-    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_session.__aexit__ = AsyncMock(return_value=False)
-
-    with patch("aiohttp.ClientSession", return_value=mock_session):
+    with patch("aiohttp.ClientSession", return_value=_make_mock_session(FAKE_RSS)):
         from bot.services.news import fetch_raw_headlines
         result = await fetch_raw_headlines()
 
@@ -57,46 +47,20 @@ async def test_fetch_raw_headlines_deduplicates():
 
 
 @pytest.mark.asyncio
-async def test_get_news_summary_uses_summarize_fn():
-    mock_resp = AsyncMock()
-    mock_resp.text = AsyncMock(return_value=FAKE_RSS)
-    mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
-    mock_resp.__aexit__ = AsyncMock(return_value=False)
+async def test_get_news_text_contains_headlines_and_links():
+    with patch("aiohttp.ClientSession", return_value=_make_mock_session(FAKE_RSS)):
+        from bot.services.news import get_news_text
+        result = await get_news_text()
 
-    mock_session = AsyncMock()
-    mock_session.get = MagicMock(return_value=mock_resp)
-    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_session.__aexit__ = AsyncMock(return_value=False)
-
-    async def fake_summarize(headlines):
-        return "Краткая сводка: " + ", ".join(headlines[:2])
-
-    with patch("aiohttp.ClientSession", return_value=mock_session):
-        from bot.services.news import get_news_summary
-        result = await get_news_summary(fake_summarize)
-
-    assert "📰" in result
-    assert "Краткая сводка" in result
+    assert "Новость" in result
+    assert "https://example.com" in result
 
 
 @pytest.mark.asyncio
-async def test_get_news_summary_fallback_on_summarize_error():
-    mock_resp = AsyncMock()
-    mock_resp.text = AsyncMock(return_value=FAKE_RSS)
-    mock_resp.__aenter__ = AsyncMock(return_value=mock_resp)
-    mock_resp.__aexit__ = AsyncMock(return_value=False)
+async def test_get_news_text_unavailable():
+    empty_rss = """<?xml version="1.0"?><rss version="2.0"><channel></channel></rss>"""
+    with patch("aiohttp.ClientSession", return_value=_make_mock_session(empty_rss)):
+        from bot.services.news import get_news_text
+        result = await get_news_text()
 
-    mock_session = AsyncMock()
-    mock_session.get = MagicMock(return_value=mock_resp)
-    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
-    mock_session.__aexit__ = AsyncMock(return_value=False)
-
-    async def broken_summarize(headlines):
-        raise RuntimeError("AI unavailable")
-
-    with patch("aiohttp.ClientSession", return_value=mock_session):
-        from bot.services.news import get_news_summary
-        result = await get_news_summary(broken_summarize)
-
-    assert "📰" in result
-    assert "Новость" in result  # fallback numbered list
+    assert "недоступны" in result

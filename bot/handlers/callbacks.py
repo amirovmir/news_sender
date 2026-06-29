@@ -7,8 +7,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from bot.database import get_user, update_user_city, update_user_time, toggle_user_active
 from bot.keyboards.inline import main_menu, settings_menu
 from bot.services.weather import geocode_city, get_weather_text
-from bot.services.news import get_news_summary
-from bot.services.ai_service import summarize_headlines
+from bot.services.news import get_news_text
 
 router = Router()
 
@@ -32,15 +31,15 @@ async def cb_weather(call: CallbackQuery):
         await call.message.answer("Сначала напиши /start")
         return
     text = await get_weather_text(user.city_lat, user.city_lon, user.city_name)
-    await call.message.answer(text)
+    await call.message.answer(f"🌍 <b>Погода в {user.city_name}</b>\n{text}")
 
 
 @router.callback_query(F.data == "news")
 async def cb_news(call: CallbackQuery):
     await call.answer()
     await call.message.answer("⏳ Собираю новости...")
-    text = await get_news_summary(summarize_headlines)
-    await call.message.answer(text)
+    text = await get_news_text()
+    await call.message.answer(f"📰 <b>Главные новости</b>\n\n{text}")
 
 
 @router.callback_query(F.data == "settings")
@@ -81,7 +80,7 @@ async def process_city(message: Message, state: FSMContext, scheduler: AsyncIOSc
     reschedule_user(scheduler, message.bot, user.telegram_id, user.notification_time, lat, lon, display_name, user.is_active)
     weather = await get_weather_text(lat, lon, display_name)
     await message.answer(
-        f"✅ Город изменён на <b>{display_name}</b>\n\n{weather}",
+        f"✅ Город изменён на <b>{display_name}</b>\n\n🌍 <b>Погода в {display_name}</b>\n{weather}",
         reply_markup=main_menu(),
     )
 
