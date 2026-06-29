@@ -74,7 +74,7 @@ async def generate_motivation() -> str:
     )
     try:
         raw = await _ask_groq(prompt, [])
-        lines = [l.strip().strip('"«»') for l in raw.strip().splitlines() if l.strip()]
+        lines = [line.strip().strip('"«»') for line in raw.strip().splitlines() if line.strip()]
         if len(lines) >= 2:
             quote, author = lines[0], lines[1]
         else:
