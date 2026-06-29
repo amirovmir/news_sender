@@ -1,4 +1,5 @@
 import asyncio
+import html
 from groq import Groq
 import google.generativeai as genai
 from loguru import logger
@@ -76,9 +77,9 @@ async def generate_motivation() -> str:
         raw = await _ask_groq(prompt, [])
         lines = [line.strip().strip('"«»') for line in raw.strip().splitlines() if line.strip()]
         if len(lines) >= 2:
-            quote, author = lines[0], lines[1]
+            quote, author = html.escape(lines[0]), html.escape(lines[1])
         else:
-            quote, author = lines[0], ""
+            quote, author = html.escape(lines[0]), ""
         return f"<blockquote>{quote}</blockquote>— {author}" if author else f"<blockquote>{quote}</blockquote>"
     except Exception:
         return "<blockquote>Делай что должен, и будь что будет.</blockquote>— Марк Аврелий"
