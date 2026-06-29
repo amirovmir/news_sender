@@ -66,14 +66,22 @@ async def ask(question: str, history: list[dict] | None = None) -> str:
 
 async def generate_motivation() -> str:
     prompt = (
-        "Напиши одну короткую мотивационную фразу на русском языке для утреннего сообщения. "
-        "Позитивная, жизнеутверждающая, 1-2 предложения. Без кавычек. "
-        "Без какого-либо форматирования: не используй жирный шрифт, курсив, HTML-теги и звёздочки."
+        "Назови одну реальную вдохновляющую цитату известного человека на русском языке. "
+        "Ответь строго в формате двух строк:\n"
+        "Строка 1: сам текст цитаты, без кавычек\n"
+        "Строка 2: имя автора, без тире и дополнительных слов\n"
+        "Больше ничего не добавляй."
     )
     try:
-        return await _ask_groq(prompt, [])
+        raw = await _ask_groq(prompt, [])
+        lines = [l.strip().strip('"«»') for l in raw.strip().splitlines() if l.strip()]
+        if len(lines) >= 2:
+            quote, author = lines[0], lines[1]
+        else:
+            quote, author = lines[0], ""
+        return f"<blockquote>{quote}</blockquote>— {author}" if author else f"<blockquote>{quote}</blockquote>"
     except Exception:
-        return "Каждый новый день — это новая возможность стать лучше!"
+        return "<blockquote>Делай что должен, и будь что будет.</blockquote>— Марк Аврелий"
 
 
 async def summarize_headlines(headlines: list[str]) -> str:
