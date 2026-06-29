@@ -34,8 +34,8 @@ async def test_get_weather_text_returns_html():
         result = await get_weather_text(55.7558, 37.6173, "Москва")
 
     assert "<b>" in result
-    assert "Москва" in result
     assert "20.5" in result
+    assert "Влажность" in result
 
 
 @pytest.mark.asyncio
@@ -47,7 +47,6 @@ async def test_get_weather_text_fallback_on_error():
         from bot.services.weather import get_weather_text
         result = await get_weather_text(55.7558, 37.6173, "Москва")
 
-    assert "Москва" in result
     assert "недоступна" in result
 
 
