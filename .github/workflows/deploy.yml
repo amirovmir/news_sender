@@ -35,7 +35,8 @@ jobs:
             fi
 
             cd deployments
-            docker compose up -d --build --remove-orphans
+            docker compose down --remove-orphans 2>/dev/null || true
+            docker compose up -d --build
 
             # Проверяем что контейнер запустился
             sleep 5
