@@ -2,6 +2,7 @@ from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 from bot.database import get_user, update_user_city, update_user_time, toggle_user_active
 from bot.keyboards.inline import main_menu, settings_menu
@@ -67,7 +68,7 @@ async def cb_set_city(call: CallbackQuery, state: FSMContext):
 
 
 @router.message(SettingsState.waiting_city)
-async def process_city(message: Message, state: FSMContext):
+async def process_city(message: Message, state: FSMContext, scheduler: AsyncIOScheduler):
     await state.clear()
     result = await geocode_city(message.text.strip())
     if result is None:
@@ -75,7 +76,6 @@ async def process_city(message: Message, state: FSMContext):
         return
     lat, lon, display_name = result
     await update_user_city(message.from_user.id, display_name, lat, lon)
-    scheduler = message.bot["scheduler"]
     from bot.services.scheduler import reschedule_user
     user = await get_user(message.from_user.id)
     reschedule_user(scheduler, message.bot, user.telegram_id, user.notification_time, lat, lon, display_name, user.is_active)
@@ -97,7 +97,7 @@ async def cb_set_time(call: CallbackQuery, state: FSMContext):
 
 
 @router.message(SettingsState.waiting_time)
-async def process_time(message: Message, state: FSMContext):
+async def process_time(message: Message, state: FSMContext, scheduler: AsyncIOScheduler):
     time_str = message.text.strip()
     try:
         parts = time_str.split(":")
@@ -110,7 +110,6 @@ async def process_time(message: Message, state: FSMContext):
         return
     await state.clear()
     await update_user_time(message.from_user.id, formatted)
-    scheduler = message.bot["scheduler"]
     from bot.services.scheduler import reschedule_user
     user = await get_user(message.from_user.id)
     reschedule_user(scheduler, message.bot, user.telegram_id, formatted, user.city_lat, user.city_lon, user.city_name, user.is_active)
@@ -121,14 +120,13 @@ async def process_time(message: Message, state: FSMContext):
 
 
 @router.callback_query(F.data == "toggle_notifications")
-async def cb_toggle(call: CallbackQuery):
+async def cb_toggle(call: CallbackQuery, scheduler: AsyncIOScheduler):
     await call.answer()
     user = await get_user(call.from_user.id)
     if not user:
         return
     new_state = not user.is_active
     await toggle_user_active(call.from_user.id, new_state)
-    scheduler = call.bot["scheduler"]
     from bot.services.scheduler import reschedule_user
     user_after = await get_user(call.from_user.id)
     reschedule_user(scheduler, call.bot, user_after.telegram_id, user_after.notification_time, user_after.city_lat, user_after.city_lon, user_after.city_name, new_state)

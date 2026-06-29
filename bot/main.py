@@ -28,7 +28,7 @@ async def main():
     scheduler = AsyncIOScheduler()
     scheduler.start()
     await setup_scheduler(scheduler, bot)
-    bot["scheduler"] = scheduler
+    dp["scheduler"] = scheduler
 
     logger.info("Bot is running!")
     try:
