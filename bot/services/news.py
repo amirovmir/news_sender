@@ -3,6 +3,7 @@ import html
 import aiohttp
 import feedparser
 from loguru import logger
+from bot.services.ai_service import translate_headlines
 
 # (source_name, url, is_russian) — is_russian used to cap RU sources in final mix
 RSS_FEEDS = [
@@ -82,4 +83,11 @@ async def get_news_text(limit: int = 7) -> str:
     items = await fetch_raw_headlines()
     if not items:
         return "⚠️ Новости временно недоступны"
-    return format_news(items, limit)
+    capped = items[:limit]
+    titles = [title for title, _, _ in capped]
+    translated = await translate_headlines(titles)
+    translated_items = [
+        (translated[i], link, source)
+        for i, (_, link, source) in enumerate(capped)
+    ]
+    return format_news(translated_items, limit)

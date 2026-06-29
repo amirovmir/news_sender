@@ -85,11 +85,30 @@ async def generate_motivation() -> str:
         return "<blockquote>Делай что должен, и будь что будет.</blockquote>— Марк Аврелий"
 
 
-async def summarize_headlines(headlines: list[str]) -> str:
-    joined = "\n".join(f"- {h}" for h in headlines)
+async def translate_headlines(headlines: list[str]) -> list[str]:
+    """Translate headlines to Russian. Returns original list on failure."""
+    if not headlines:
+        return headlines
+    numbered = "\n".join(f"{i}. {h}" for i, h in enumerate(headlines, 1))
     prompt = (
-        f"Вот заголовки новостей за последние сутки:\n{joined}\n\n"
-        "Выдели 5 главных тем (не просто перечисли заголовки, а кратко опиши суть каждой темы). "
-        "Формат: нумерованный список, 1-2 предложения на каждую тему. HTML не нужен, только текст."
+        f"Переведи следующие заголовки новостей на русский язык. "
+        f"Верни ТОЛЬКО пронумерованный список в том же порядке, без пояснений:\n{numbered}"
     )
-    return await ask(prompt, [])
+    try:
+        raw = await _ask_groq(prompt, [])
+        translated = []
+        for line in raw.strip().splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            # Strip leading "1. ", "1) ", etc.
+            if line[0].isdigit():
+                line = line.split(".", 1)[-1].split(")", 1)[-1].strip()
+            translated.append(line)
+        if len(translated) == len(headlines):
+            return translated
+        logger.warning(f"Translation count mismatch: {len(headlines)} in, {len(translated)} out")
+        return headlines
+    except Exception as e:
+        logger.warning(f"Translation failed: {e}")
+        return headlines
